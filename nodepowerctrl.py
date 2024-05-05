@@ -9,8 +9,8 @@ class NodePowerControl():
 
     def read_nodes(self):
         try:
-            # print(os.getcwd())
-            text = open('./node-status-bot/ShellyNodes.json', 'r').read() 
+            print(os.getcwd())
+            text = open('./ShellyNodes.json', 'r').read() 
             shellyNodes = json.loads(text)
         
             for shellyNode in shellyNodes['nodes']:

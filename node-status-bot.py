@@ -274,28 +274,28 @@ def network(update: Update, context: CallbackContext):
 def new_user():
     return {'net': 'main', 'nodes': {'main': [], 'test': [], 'dev': []}}
 
-def ping_rmb(net, nodes, timeout):
-    """
-    Ping one or more nodes via RMB.
-    """
-    client = rmb_clients[net]
-    twins = [node.twinId for node in nodes]
+# def ping_rmb(net, nodes, timeout):
+#     """
+#     Ping one or more nodes via RMB.
+#     """
+#     client = rmb_clients[net]
+#     twins = [node.twinId for node in nodes]
 
-    # Even with exp set, we can still get replies after the timeout, this means we should flush the queue before starting and/or check timestamps on incoming messages. It also means we can't stop receiving when number of received messages equals number of nodes queried, since replies for other nodes can come in and cause a false failure.
-    client.send('zos.statistics.get', twins, exp_delta=timeout)
+#     # Even with exp set, we can still get replies after the timeout, this means we should flush the queue before starting and/or check timestamps on incoming messages. It also means we can't stop receiving when number of received messages equals number of nodes queried, since replies for other nodes can come in and cause a false failure.
+#     client.send('zos.statistics.get', twins, exp_delta=timeout)
 
-    finished = time.time() + timeout
-    replies = []
-    remaining = timeout
-    while remaining > 0 and len(replies) < len(nodes):
-        if reply := client.receive(remaining):
-            replies.append(reply)
+#     finished = time.time() + timeout
+#     replies = []
+#     remaining = timeout
+#     while remaining > 0 and len(replies) < len(nodes):
+#         if reply := client.receive(remaining):
+#             replies.append(reply)
 
-        remaining = finished - time.time()
+#         remaining = finished - time.time()
 
-    twins_replied = [int(reply['src']) for reply in replies]
-    up_nodes = [node for node in nodes if node.twinId in twins_replied]
-    return up_nodes
+#     twins_replied = [int(reply['src']) for reply in replies]
+#     up_nodes = [node for node in nodes if node.twinId in twins_replied]
+#     return up_nodes
 
 def send_message(context, chat_id, text):
     try:
