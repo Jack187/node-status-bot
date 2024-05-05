@@ -309,30 +309,30 @@ def send_message(context, chat_id, text):
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     context.bot_data['chats'].setdefault(chat_id, new_user())
-    msg = '''
-Hey there, I'm the ThreeFold Grid 3 node status bot. Beep boop.
+#     msg = '''
+# Hey there, I'm the ThreeFold Grid 3 node status bot. Beep boop.
 
-I can give you information about whether a node is up or down right now and also notify you if its state changes in the future. Here are the commands I support:
+# I can give you information about whether a node is up or down right now and also notify you if its state changes in the future. Here are the commands I support:
 
-/network (/net) - change the network to "dev", "test", or "main" (default is main). If you don't provide an input, the currently selected network is shown. 
-Example: /network main
+# /network (/net) - change the network to "dev", "test", or "main" (default is main). If you don't provide an input, the currently selected network is shown. 
+# Example: /network main
 
-/status - check the current status of one node. This is based on Grid proxy and should match what's reported by the explorer which updates relatively slowly.
-Example: /status 1
+# /status - check the current status of one node. This is based on Grid proxy and should match what's reported by the explorer which updates relatively slowly.
+# Example: /status 1
 
-/ping - check the current status of a node via a ping over Yggdrasil. This provides more responsive output than /status, but can misreport nodes as down if there's an issue with Yggdrasil.
-Example: /ping 42
+# /ping - check the current status of a node via a ping over Yggdrasil. This provides more responsive output than /status, but can misreport nodes as down if there's an issue with Yggdrasil.
+# Example: /ping 42
 
-/subscribe (/sub) - subscribe to updates about one or more nodes. If you don't provide an input, the nodes you are currently subscribed to will be shown. 
-Example: /sub 1 2 3
+# /subscribe (/sub) - subscribe to updates about one or more nodes. If you don't provide an input, the nodes you are currently subscribed to will be shown. 
+# Example: /sub 1 2 3
 
-/unsubscribe (/unsub) - unsubscribe from updates about one or more nodes. If you don't give an input, you'll be unsubscribed from all updates.
+# /unsubscribe (/unsub) - unsubscribe from updates about one or more nodes. If you don't give an input, you'll be unsubscribed from all updates.
 
-To report bugs, request features, or just say hi, please contact @scottyeager. Please also subscribe to the updates channel here for news on the bot: t.me/node_bot_updates
+# To report bugs, request features, or just say hi, please contact @scottyeager. Please also subscribe to the updates channel here for news on the bot: t.me/node_bot_updates
 
-This bot is experimental and probably has bugs. Only you are responsible for your node's uptime and your farming rewards.
-    '''
-    send_message(context, chat_id, text=msg)
+# This bot is experimental and probably has bugs. Only you are responsible for your node's uptime and your farming rewards.
+#     '''
+    # send_message(context, chat_id, text=msg)
 
 def status_gql(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
