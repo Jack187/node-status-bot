@@ -1,6 +1,8 @@
 import logging, argparse, time
 import requests
 
+from nodepowerctrl import *
+
 import telegram
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CallbackContext, CommandHandler, PicklePersistence, Defaults
@@ -14,7 +16,8 @@ from grid3.types import Node
 
 # from grid3.rmb import RmbClient, RmbPeer
 
-NETWORKS = ['main', 'test', 'dev']
+# NETWORKS = ['main', 'test', 'dev']
+NETWORKS = ['main']
 DEFAULT_PING_TIMEOUT = 10
 
 parser = argparse.ArgumentParser()
@@ -96,25 +99,34 @@ def check_job(context: CallbackContext):
 
         for node in nodes:
             try:
+                print(node.status)
                 previous = context.bot_data['nodes'][net][node.nodeId]
 
                 if previous.power['target'] == 'Down' and node.power['target'] == 'Up':
                     for chat_id in subbed_nodes[node.nodeId]:
                         send_message(context, chat_id, text='Node {} wake up initiated \N{hot beverage}'.format(node.nodeId))
 
-                if previous.status == 'up' and node.status == 'down':
+                elif previous.status == 'up' and node.status == 'down':
                     for chat_id in subbed_nodes[node.nodeId]:
                         send_message(context, chat_id, text='Node {} has gone offline \N{warning sign}'.format(node.nodeId))
 
+                elif previous.status == 'waking' and node.status == 'waking_blocked':
+                    for chat_id in subbed_nodes[node.nodeId]:
+                        msg = 'Node {} wake up takes longer than expected \N{Heavy Exclamation Mark Symbol}'.format(node.nodeId)
+                        msg += '\nExecute power cycle \N{electric plug}'
+                        send_message(context, chat_id, text=msg)
+                        nodePowerControl.power_cycle(node.nodeId)
+                        # set status to power_cycled, that should automatically reset
+
                 elif previous.status == 'up' and node.status == 'standby':
                     for chat_id in subbed_nodes[node.nodeId]:
-                        send_message(context, chat_id, text='Node {} has gone to sleep \N{last quarter moon with face}'.format(node.nodeId))
+                        send_message(context, chat_id, text='Node {} has gone to sleep \N{Sleeping Symbol}'.format(node.nodeId))
 
                 elif previous.status == 'standby' and node.status == 'down':
                     for chat_id in subbed_nodes[node.nodeId]:
                         send_message(context, chat_id, text='Node {} did not wake up within 24 hours \N{warning sign}'.format(node.nodeId))
 
-                elif previous.status in ('down', 'standby') and node.status == 'up':
+                elif previous.status != 'up' and node.status == 'up':
                     for chat_id in subbed_nodes[node.nodeId]:
                         send_message(context, chat_id, text='Node {} has come online \N{electric light bulb}'.format(node.nodeId))
 
@@ -187,7 +199,7 @@ def get_nodes_from_file(net, node_ids):
     For use in test mode, to emulate get_nodes using data in a file. The updatedAt value is given in the file as a delta of how many seconds in the past and converted to absolute time here
     """
     if net == 'main':
-        text = open('./test/node', 'r').read()
+        text = open('./node-status-bot/.test/node', 'r').read()
         node = Node(json.loads(text))
         node.updatedAt = time.time() - node.updatedAt
         node.status = get_node_status(node)
@@ -201,12 +213,17 @@ def get_node_status(node):
     """
     More or less the same methodology that Grid Proxy uses. Nodes are supposed to report every 40 minutes, so we consider them offline after one hour. Standby nodes should wake up once every 24 hours, so we consider them offline after that.
     """
+    ten_minutes_ago = time.time() - 60 * 10
     one_hour_ago = time.time() - 60 * 60
     one_day_ago = time.time() - 60 * 60 * 24
 
     # It's possible that some node might not have a power state
     if node.updatedAt > one_hour_ago and node.power['state'] != 'Down':
         return 'up'
+    elif node.power['state'] == 'Down' and node.power['target'] == 'Up' and node.updatedAt > ten_minutes_ago:
+        return 'waking'
+    elif node.power['state'] == 'Down' and node.power['target'] == 'Up':
+        return 'waking_blocked'
     elif node.power['state'] == 'Down' and node.updatedAt > one_day_ago:
         return 'standby'
     else:
@@ -536,6 +553,9 @@ def log_job(context: CallbackContext):
     if log_length - last_length > args.logs and args.admin:
         send_message(context, args.admin, text='Log file has grown by {} lines. Houston, we have a ...?'.format(args.logs))
 
+
+nodePowerControl = NodePowerControl()
+nodePowerControl.read_nodes()
 
 # Anyone commands
 dispatcher.add_handler(CommandHandler('chat_id', check_chat))

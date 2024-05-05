@@ -1,0 +1,7 @@
+.test/node
+__pycache__/nodepowerctrl.cpython-310.pyc
+venv/*
+bot_data
+logs
+rmb-peer
+ShellyNodes.json
