@@ -1,8 +1,9 @@
 .test/node
-__pycache__/nodepowerctrl.cpython-310.pyc
-venv/*
-bot_data
+__pycache__
+*venv/*
+bot_data*
 logs
+*.log
 rmb-peer
 .vscode/launch.json
 .config/*

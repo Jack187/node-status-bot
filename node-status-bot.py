@@ -199,7 +199,7 @@ def get_nodes_from_file(net, node_ids):
     For use in test mode, to emulate get_nodes using data in a file. The updatedAt value is given in the file as a delta of how many seconds in the past and converted to absolute time here
     """
     if net == 'main':
-        text = open('./node-status-bot/.test/node', 'r').read()
+        text = open('./.test/node', 'r').read()
         node = Node(json.loads(text))
         node.updatedAt = time.time() - node.updatedAt
         node.status = get_node_status(node)
@@ -336,7 +336,7 @@ def start(update: Update, context: CallbackContext):
 
 def status_gql(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    user = context.bot_data['chats'].setdefault(chat_id, new_user())
+    user = context.bot_data['chats'].setdefault(chat_id, new_user()) # returns if exist or create new_user
 
         
     net = user['net']
