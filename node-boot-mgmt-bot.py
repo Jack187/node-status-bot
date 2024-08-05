@@ -355,7 +355,7 @@ def check_job(context: CallbackContext):
 
         for node in nodes:
             try:
-                print(node.status)
+                #print(node.status)
                 previous = context.bot_data['nodes'][net][node.nodeId]
 
                 if previous.power['target'] == 'Down' and node.power['target'] == 'Up':

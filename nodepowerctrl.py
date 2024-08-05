@@ -41,8 +41,14 @@ class ShellyPlug(NodePowerController):
         print(f"Power cyling the shelly plug {self.nodeID}.")
         try:
             shelly = ShellyPy.Shelly(self.address)
-            result = shelly.relay(0, turn=False, timer=5) # turn off and after 5 seconds on
-            return not result['ison']
+            result = shelly.relay(0, turn=False, timer=10) # turn off and after 10 seconds on
+            if 'ison' in result.keys(): # shelly gen1
+                return not result['ison']
+            elif 'was_on' in result.keys(): #shelly plus plug s (gen2)
+                return result['was_on']
+            else:
+                logging.warn("shelly.relay returned unknown result. Power cycle maybe not successfull.")
+                return False
         except:
             logging.exception('Error switching shelly')
             return False

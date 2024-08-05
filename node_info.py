@@ -2,7 +2,7 @@ import time
 from nodepowerctrl import NodePowerController
 
 class NodeInfo:
-    _maxBootTime = 2
+    _maxBootTime = 10
     _nodeId = 0
     _lastWakeUpTime = None
     _nodePowerCtrl = None
