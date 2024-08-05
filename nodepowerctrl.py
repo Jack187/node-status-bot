@@ -24,7 +24,7 @@ class NodePowerControl():
         if node != None:
             node.power_cyle()
 
-class PowerControlledNode(ABC):
+class NodePowerController(ABC):
     address = str()
     nodeID = int()
     
@@ -32,17 +32,22 @@ class PowerControlledNode(ABC):
     def power_cyle(self):
         pass
 
-class ShellyPlug(PowerControlledNode):
+class ShellyPlug(NodePowerController):
     def __init__(self, nodeID, address):
         self.address = address        
         self.nodeID = nodeID
         
     def power_cyle(self):
         print(f"Power cyling the shelly plug {self.nodeID}.")
-        shelly = ShellyPy.Shelly(self.address)
-        shelly.relay(0, turn=False, timer=3) # turn off and after 3 seconds on
+        try:
+            shelly = ShellyPy.Shelly(self.address)
+            result = shelly.relay(0, turn=False, timer=5) # turn off and after 5 seconds on
+            return not result['ison']
+        except:
+            logging.exception('Error switching shelly')
+            return False
         
-class AmtMachine(PowerControlledNode):
+class AmtMachine(NodePowerController):
     def __init__(self, nodeID, address):
         self.address = address        
         self.nodeID = nodeID

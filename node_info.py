@@ -1,9 +1,11 @@
 import time
+from nodepowerctrl import NodePowerController
 
 class NodeInfo:
-    _maxBootTime = 7
+    _maxBootTime = 2
     _nodeId = 0
     _lastWakeUpTime = None
+    _nodePowerCtrl = None
 
     def __init__(self, nodeId: int) -> None:
         self._nodeId = nodeId
@@ -13,4 +15,7 @@ class NodeInfo:
     
     def reset_last_wake_time(self):
         self._lastWakeUpTime = None
+
+    def update_power_ctrl(self, nodePowerCtrl: NodePowerController):
+        self._nodePowerCtrl = nodePowerCtrl
         

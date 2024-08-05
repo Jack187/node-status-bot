@@ -8,6 +8,7 @@ import grid3.graphql
 from grid3.types import Node
 
 from managed_node import ManagedNode, NodeInfo
+from nodepowerctrl import ShellyPlug
 
 NETWORKS = ['main']
 DEFAULT_PING_TIMEOUT = 10
@@ -295,6 +296,43 @@ def unsubscribe(update: Update, context: CallbackContext):
         else:
             send_message(context, chat_id, text='Please write "/unsubscribe all" if you wish to remove all subscribed nodes.')
 
+def powerctrl(update: Update, context: CallbackContext):
+    """
+    Sets the 
+    """
+    chat_id = update.effective_chat.id
+    
+    if not chat_id in context.bot_data['chats']:
+        return
+    
+    user = context.bot_data['chats'][chat_id]
+
+    if len(user['nodes']) == 0:
+        send_message(context, chat_id, text="No node subscribed.")
+    else:
+        if context.args:
+            pwrCtrledNodes = []
+            net = user['net']
+            nodeInfos = context.bot_data['nodeInfos'][net]
+            for pwrCtrlData in context.args:
+                try:
+                    pwrCtrlData = pwrCtrlData.split(":")
+                    nodeId = pwrCtrlData[0]
+                    nodeInfo = nodeInfos[int(nodeId)]
+                    if len(pwrCtrlData) > 1:
+                        address = pwrCtrlData[1] # parse ip or hostname
+                        nodeInfo.update_power_ctrl(ShellyPlug(nodeId, address))
+                        pwrCtrledNodes.append(nodeInfo)
+                except ValueError:
+                    pass
+            
+            pwrCtrledNodes = {ni._nodeId: ni for ni in pwrCtrledNodes }
+            context.bot_data['nodeInfos'][net].update(pwrCtrledNodes)
+
+            if pwrCtrledNodes:
+                send_message(context, chat_id, text='You have actived power control for node' + format_list(list(pwrCtrledNodes.keys())))
+            else:
+                send_message(context, chat_id, text='No power control set.')        
 
 def check_job(context: CallbackContext):
     """
@@ -336,11 +374,21 @@ def check_job(context: CallbackContext):
                 elif previous.status == 'waking' and node.status == 'waking_blocked':
                     if (msgLevel <= logging.WARN):
                         for chat_id in subbed_nodes[node.nodeId]:
-                            msg = 'Node {} wake up takes longer than expected \N{Heavy Exclamation Mark Symbol}'.format(node.nodeId)
-                            # msg += '\nExecute power cycle \N{electric plug}'
+                            msg = 'Node {} wake up takes longer than expected \N{warning sign}'.format(node.nodeId)
                             send_message(context, chat_id, text=msg)
-                            # nodePowerControl.power_cycle(node.nodeId)
-                            # set status to power_cycled, that should automatically reset
+                            
+                            nodePwrCtrler = nodeInfos[node.nodeId]._nodePowerCtrl
+                            if nodePwrCtrler:
+
+                                if nodePwrCtrler.power_cyle():
+                                    msg = 'Executed power cycle for node {} ({}) \N{electric plug}'.format(node.nodeId, nodePwrCtrler.address)
+                                else:
+                                    msg = 'Execute power cycle for node {} ({}) failed! \N{Heavy Exclamation Mark Symbol}'.format(node.nodeId, nodePwrCtrler.address)
+                            else:
+                                msg = 'No power controller set for node {}. Node will not be power cycled \N{Heavy Exclamation Mark Symbol}'.format(node.nodeId)
+
+                            send_message(context, chat_id, text=msg)
+                            # TODO reset for another try (maybe multiply with reset attempts??
 
                 elif previous.status == 'up' and node.status == 'standby':
                     # to be safe reset here as well (up should have done it already)
@@ -381,6 +429,7 @@ dispatcher.add_handler(CommandHandler('sub', subscribe))
 #dispatcher.add_handler(CommandHandler('timeout', timeout))
 dispatcher.add_handler(CommandHandler('unsubscribe', unsubscribe))
 dispatcher.add_handler(CommandHandler('unsub', unsubscribe))
+dispatcher.add_handler(CommandHandler('powerctrl', powerctrl))
 
 updater.job_queue.run_once(initialize, when=0)
 updater.job_queue.run_repeating(check_job, interval=args.poll, first=0)
