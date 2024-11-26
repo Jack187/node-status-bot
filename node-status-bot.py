@@ -213,14 +213,14 @@ def get_node_status(node):
     """
     More or less the same methodology that Grid Proxy uses. Nodes are supposed to report every 40 minutes, so we consider them offline after one hour. Standby nodes should wake up once every 24 hours, so we consider them offline after that.
     """
-    ten_minutes_ago = time.time() - 60 * 10
+    twelve_minutes_ago = time.time() - 60 * 12
     one_hour_ago = time.time() - 60 * 60
     one_day_ago = time.time() - 60 * 60 * 24
 
     # It's possible that some node might not have a power state
     if node.updatedAt > one_hour_ago and node.power['state'] != 'Down':
         return 'up'
-    elif node.power['state'] == 'Down' and node.power['target'] == 'Up' and node.updatedAt > ten_minutes_ago:
+    elif node.power['state'] == 'Down' and node.power['target'] == 'Up' and node.updatedAt > twelve_minutes_ago:
         return 'waking'
     elif node.power['state'] == 'Down' and node.power['target'] == 'Up':
         return 'waking_blocked'
