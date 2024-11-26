@@ -41,7 +41,7 @@ class ShellyPlug(NodePowerController):
         print(f"Power cyling the shelly plug {self.nodeID}.")
         try:
             shelly = ShellyPy.Shelly(self.address)
-            result = shelly.relay(0, turn=False, timer=10) # turn off and after 10 seconds on
+            result = shelly.relay(0, turn=False, timer=45) # turn off and after 45 seconds on (important for HP Z840, wich starts not immediately after power cycle)
             if 'ison' in result.keys(): # shelly gen1
                 return not result['ison']
             elif 'was_on' in result.keys(): #shelly plus plug s (gen2)
