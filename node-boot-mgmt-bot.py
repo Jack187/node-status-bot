@@ -99,6 +99,10 @@ def format_nodes(up, down, standby):
 
     return text
 
+def format_verticle_nodeInfolist_sorted(nodeInfoList):
+    nodeInfoList.sort(key=lambda node: node._nodeId)
+    return format_verticle_list(nodeInfoList)
+
 def format_verticle_list(items):
     text = ''
     for item in items:
@@ -306,33 +310,42 @@ def powerctrl(update: Update, context: CallbackContext):
         return
     
     user = context.bot_data['chats'][chat_id]
+    net = user['net']
+    subbed_nodes = user['nodes'][net]
+    nodeInfosDict = context.bot_data['nodeInfos'][net]
 
-    if len(user['nodes']) == 0:
-        send_message(context, chat_id, text="No node subscribed.")
+    if len(subbed_nodes) == 0:
+        send_message(context, chat_id, text="You are not subscribed to any nodes")
+        return
+    
+    if context.args:
+        pwrCtrledNodes = []
+        for pwrCtrlData in context.args:
+            try:
+                pwrCtrlData = pwrCtrlData.split(":")
+                nodeId = pwrCtrlData[0]
+                nodeInfo = nodeInfosDict[int(nodeId)]
+                if len(pwrCtrlData) > 1:
+                    address = pwrCtrlData[1] # parse ip or hostname
+                    nodeInfo.update_power_ctrl(ShellyPlug(nodeId, address))
+                    pwrCtrledNodes.append(nodeInfo)
+                if len(pwrCtrlData) > 2:
+                    maxBootTime = (int)(pwrCtrlData[2])
+                    nodeInfo.update_max_boot_time(maxBootTime)
+            except ValueError:
+                pass
+        
+        # convert nodeInfos that were updated to dict for update bot_data
+        pwrCtrledNodes = {ni._nodeId: ni for ni in pwrCtrledNodes }
+        context.bot_data['nodeInfos'][net].update(pwrCtrledNodes)
+
+        if pwrCtrledNodes:
+            send_message(context, chat_id, text='You have actived power control for node' + format_list(list(pwrCtrledNodes.keys())))
+        else:
+            send_message(context, chat_id, text='No power control set.')
     else:
-        if context.args:
-            pwrCtrledNodes = []
-            net = user['net']
-            nodeInfos = context.bot_data['nodeInfos'][net]
-            for pwrCtrlData in context.args:
-                try:
-                    pwrCtrlData = pwrCtrlData.split(":")
-                    nodeId = pwrCtrlData[0]
-                    nodeInfo = nodeInfos[int(nodeId)]
-                    if len(pwrCtrlData) > 1:
-                        address = pwrCtrlData[1] # parse ip or hostname
-                        nodeInfo.update_power_ctrl(ShellyPlug(nodeId, address))
-                        pwrCtrledNodes.append(nodeInfo)
-                except ValueError:
-                    pass
-            
-            pwrCtrledNodes = {ni._nodeId: ni for ni in pwrCtrledNodes }
-            context.bot_data['nodeInfos'][net].update(pwrCtrledNodes)
-
-            if pwrCtrledNodes:
-                send_message(context, chat_id, text='You have actived power control for node' + format_list(list(pwrCtrledNodes.keys())))
-            else:
-                send_message(context, chat_id, text='No power control set.')        
+        if nodeInfosDict:
+            send_message(context, chat_id, text='Your current power control config\n' + format_verticle_nodeInfolist_sorted(list(nodeInfosDict.values())))
 
 def check_job(context: CallbackContext):
     """

@@ -10,6 +10,12 @@ class NodeInfo:
     def __init__(self, nodeId: int) -> None:
         self._nodeId = nodeId
 
+    def __str__(self):
+        if (self.is_under_power_ctrl()):
+            return f"{self._nodeId}:{self._nodePowerCtrl.address}:{self._maxBootTime}"
+        else:
+            return f"{self._nodeId}:no_power_control"
+    
     def update_last_wake_time(self):
         self._lastWakeUpTime = time.time()
     
@@ -18,4 +24,10 @@ class NodeInfo:
 
     def update_power_ctrl(self, nodePowerCtrl: NodePowerController):
         self._nodePowerCtrl = nodePowerCtrl
-        
+    
+    def update_max_boot_time(self, maxBootTime: int ):
+        self._maxBootTime = maxBootTime
+    
+    def is_under_power_ctrl(self):
+        return self._nodePowerCtrl != None
+    
